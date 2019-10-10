@@ -1,6 +1,6 @@
 # Requirements 
   - Firefox installed
-  - Windows
+  - Windows ( on mac before run the bot u have to add in the same folder of the bot file the geckodriver app (v 0.24) u can download it from here https://github.com/mozilla/geckodriver/releases )
   - place the file in its own folder
   - pip3 install selenium
   - pip3 install requests

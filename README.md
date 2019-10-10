@@ -2,6 +2,8 @@
   - Firefox installed
   - Windows
   - place the file in its own folder
+  - pip3 install selenium
+  - pip3 install requests
   
 # Quick start
 - Run the file

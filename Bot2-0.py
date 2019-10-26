@@ -50,6 +50,8 @@ CWD = os.getcwd()
 win_zip_directory = os.getcwd() + '/gekodriver.zip'
 win_unzip_directory = os.getcwd() + '/gekodriver'
 
+
+
 # check the system name and downloads the correct gekodriver ( for now it works only for windows )
 if 'windows' in system.lower() :
     if not os.path.exists('geckodriver.exe'):
@@ -63,14 +65,17 @@ if 'windows' in system.lower() :
         os.remove(win_zip_directory)
         shutil.move(win_unzip_directory + '/geckodriver.exe', CWD + '/geckodriver.exe')
         shutil.rmtree(win_unzip_directory)
+    EXE_PATH = f'{CWD}/geckodriver.exe'
 
 elif 'darwin' in system.lower():
     if not os.path.exists('geckodriver'):
         pass
+    EXE_PATH = f'{CWD}/geckodriver'
 
 elif 'linux' in system.lower():
     if not os.path.exists('geckodriver'):
         pass
+    EXE_PATH = f'{CWD}/geckodriver'
 
 def send(word):
     if word == '<ENTER>':
@@ -1183,7 +1188,7 @@ class InstagramBot:
         # Bot options
         self._headless = headless
         options_ = firefoxOptions()
-        test_broswer = webdriver.Firefox(executable_path='/home/pero/PycharmProjects/instagram/python/geckodriver')
+        test_broswer = webdriver.Firefox(executable_path=EXE_PATH)
         test_broswer.maximize_window()
         self.broswer_height = test_broswer.execute_script('return window.innerHeight;')
         self.broswer_width = test_broswer.execute_script('return window.innerWidth;')
@@ -1197,7 +1202,7 @@ class InstagramBot:
         self.real_broswer = webbrowser.get('firefox')
 
         self.real_broswer.open('http://www.instagram.com/accounts/login')
-        self.broswer = webdriver.Firefox(options=options_, executable_path='/home/pero/PycharmProjects/instagram/python/geckodriver')
+        self.broswer = webdriver.Firefox(options=options_, executable_path=EXE_PATH)
         if not headless:
             self.broswer.maximize_window()
         self.broswer.set_page_load_timeout(30)
@@ -2166,7 +2171,7 @@ class InstagramBot:
                 pass
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':Matteopablo99
     today_date = str(time.localtime().tm_mday) + "/" + str(time.localtime().tm_mon) + "/" + str(
         time.localtime().tm_year)
     SETTINGS_FILE = CWD + "/Datas/Settings.txt"

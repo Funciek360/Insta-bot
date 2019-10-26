@@ -37,7 +37,12 @@ from screeninfo import get_monitors
 
 mouse = MouseController()
 keyboard = KeyboardController()
-
+MONITORS = get_monitors()
+MONITORS_SIZES = []
+for monitor in MONITORS:
+    width, height = monitor.width, monitor.height
+    if not [width, height] in MONITORS_SIZES:
+        MONITORS_SIZES.append([width, height])
 ## DOWNLOAD GEKODRIVER IF NOT INSTALLED
 system = platform.system()
 print('SYSTEM: ', system.lower())
@@ -255,6 +260,7 @@ class Window:
         style.configure('my.TMenubutton', font=self.custom_font)
         # self.master.iconbitmap(default=cwd + "/assets/icona.ico")
         self.resolution = [int(elem) for elem in read_in_block(SETTINGS_FILE, 'MonitorResolution', ':', 'm_r')['m_r'][0].strip().split('x')]
+        self.appBarPos = read_in_block(SETTINGS_FILE, 'ApplicationBar', ':', 'position')['position'][0]
         w = 730  # width for the Tk root
         h = 405  # height for the Tk root
         if self.resolution == [0, 0]:
@@ -337,20 +343,83 @@ class Window:
         stats_button = tk.Button(self.options_frame, text="stats", bg="white", font=self.custom_font, command=self.place_stats_frame)
         stats_button.place(y=profiles_button.winfo_height() + 90 + y, x=10)
         self.root.update()
-        self.change_resolution_button = tk.Button(self.options_frame, text="Monitor Resolution", bg="white", font=self.custom_font, command=self.get_monitor_resolution)
+
+        self.change_resolution_button = tk.Button(self.options_frame, text="Monitor Resolution", bg="green", font=self.custom_font, command=self.get_monitor_resolution)
         self.change_resolution_button.place(y=stats_button.winfo_height() + 135 + y, x=10)
         if self.resolution == [0, 0]:
             self.change_resolution_button.config(bg='red', fg='white')
+            self.get_monitor_resolution()
+        if len(MONITORS_SIZES) < 2:
+            self.change_resolution_button.config(state='disable')
+
+        self.change_appBarPos_button = tk.Button(self.options_frame, text="AppBar Position", bg="green", font=self.custom_font, command=self.get_app_bar_pos)
+        self.change_appBarPos_button.place(y=stats_button.winfo_height() + 185 + y, x=10)
+        if self.appBarPos == '':
+            self.change_appBarPos_button.config(bg='red', fg='white')
+            self.get_app_bar_pos()
+
+    def get_app_bar_pos(self):
+        # Creating master Tkinter window
+        popup = tk.Toplevel(self.root)
+        popup.wm_title("TaskBar position")
+        w = 350  # width for the Tk root
+        h = 270  # height for the Tk root
+        if self.resolution == [0, 0]:
+            x = (self.root.winfo_screenwidth() / 2) - (w / 2)
+            y = (self.root.winfo_screenheight() / 2) - (h / 2)
+        else:
+            x = (MONITOR_WIDTH / 2) - (w / 2)
+            y = (MONITOR_HEIGHT / 2) - (h / 2)
+
+        popup.geometry('%dx%d+%d+%d' % (w, h, x, y))
+        popup.resizable(False, False)
+
+        canvas = tk.Canvas(popup, width=250, height=250)
+        canvas.place(x=0, y=0)
+
+        label_1 = tk.Label(popup, text='for the correct functioning of the bot,\nindicate the position of the application bar')
+        canvas.create_window(175, 35, window=label_1)
+
+        monitors_frame = tk.Canvas(popup, width=210, height=100, bg='white')
+        canvas.create_window(175, 120, window=monitors_frame)
+
+        # Tkinter string variable
+        # able to store any string value
+        v = tk.StringVar()
+
+        values = {
+            'LEFT': 'LEFT',
+            'RIGHT': 'RIGHT',
+            'TOP': 'TOP',
+            'BOTTOM': 'BOTTOM',
+        }
+
+        # Loop is used to create multiple Radiobuttons
+        # rather than creating each button seperately
+        x = 15
+        y = 10
+        for (text, value) in values.items():
+            radio_button = tk.Radiobutton(monitors_frame, font=self.custom_font_10,text=f'{value}', variable=v, value=value, bg='white', bd=0, highlightthickness=0)
+            monitors_frame.create_window(x, y, window=radio_button, anchor=tk.NW)
+            y+=30
+
+        scrollbar = tk.Scrollbar(monitors_frame, command=monitors_frame.yview)
+        scrollbar.place(x=0, y=0, relheight=1)
+        monitors_frame.configure(yscrollcommand=scrollbar.set, scrollregion=(0, 10, 0, y))
+
+        label_2 = tk.Label(popup, text="Remember to execute the app on the main monitor\nfor run correctly the bot", fg='red')
+        canvas.create_window(175, 210, window=label_2)
+        button = tk.Button(popup, text="Submit", command=lambda: self.submit_appBar_pos(v.get(), popup))
+        canvas.create_window(175, 250, window=button)
+        self.change_appBarPos_button.config(bg='green', fg='black')
+
+    def submit_appBar_pos(self, position, popup):
+        write_in_block(SETTINGS_FILE, "ApplicationBar", ":", position=position)
+        popup.destroy()
 
     def get_monitor_resolution(self):
-        sizes = []
-        for monitor in get_monitors():
-            width, height = monitor.width, monitor.height
-            if not [width, height] in sizes:
-                sizes.append([width, height])
 
-
-        if len(sizes) > 1:
+        if len(MONITORS_SIZES) > 1:
             # Creating master Tkinter window
             popup = tk.Toplevel(self.root)
             popup.wm_title("Monitor resolution")
@@ -380,8 +449,8 @@ class Window:
             v = tk.StringVar()
 
             values = dict()
-            for i in range(len(sizes)):
-                values[f'Monitor {i}'] = sizes[i]
+            for i in range(len(MONITORS_SIZES)):
+                values[f'Monitor {i}'] = MONITORS_SIZES[i]
 
             # Loop is used to create multiple Radiobuttons
             # rather than creating each button seperately
@@ -401,8 +470,8 @@ class Window:
             button = tk.Button(popup, text="Submit", command=lambda: self.submit_monitor_resolution(v.get().strip('[]').replace(' ', 'x'), popup))
             canvas.create_window(175, 250, window=button)
         else:
-            write_in_block(SETTINGS_FILE, "MonitorResolution", ":", m_r=str(sizes[0][0]) + 'x' + str(sizes[0][1]))
-        self.change_resolution_button.config(bg='white', fg='black')
+            write_in_block(SETTINGS_FILE, "MonitorResolution", ":", m_r=str(MONITORS_SIZES[0][0]) + 'x' + str(MONITORS_SIZES[0][1]))
+        self.change_resolution_button.config(bg='green', fg='black')
 
     def submit_monitor_resolution(self, resolution, popup):
         write_in_block(SETTINGS_FILE, "MonitorResolution", ":", m_r=resolution)
@@ -1156,7 +1225,16 @@ class InstagramBot:
         time.sleep(2)
         x_ = elem.location['x']
         y_ = elem.location['y']
-        mouse.position = (x_ + self.x_surplus + 10 + x, y_ + self.y_surplus + 10 + y)
+        pos = (0, 0)
+        if APP_BAR_POSITION == 'LEFT':
+            pos = (x_ + self.x_surplus + 10 + x, y_ + self.y_surplus + 10 + y)
+        elif APP_BAR_POSITION == 'RIGHT':
+            pos = (x_ + self.x_surplus + 10 - x, y_ + self.y_surplus + 10 + y)
+        elif APP_BAR_POSITION == 'TOP':
+            pos = (x_ + self.x_surplus + 10 + x, y_ + self.y_surplus + 10 + y)
+        elif APP_BAR_POSITION == 'BOTTOM':
+            pos = (x_ + self.x_surplus + 10 + x, y_ + self.y_surplus + 10 - y)
+        mouse.position = pos
         mouse.press(Button.left)
         mouse.release(Button.left)
         time.sleep(0.5)
@@ -2094,12 +2172,13 @@ if __name__ == '__main__':
     SETTINGS_FILE = CWD + "/Datas/Settings.txt"
     DATAS_FOLDER = CWD + "/Datas"
 
+
     if not os.path.exists(DATAS_FOLDER):
         os.mkdir(DATAS_FOLDER)
 
     if not os.path.exists(SETTINGS_FILE):
         with open(SETTINGS_FILE, 'w') as file:
-            file.write("Last login\ndate:" + today_date + ":username:" + "None" + "\nMonitorResolution\nm_r:0x0")
+            file.write("Last login\ndate:" + today_date + ":username:" + "None" + "\nMonitorResolution\nm_r:0x0\nApplicationBar\nposition:")
     else:
         with open(SETTINGS_FILE, 'r') as file:
             lines = file.readlines()
@@ -2108,7 +2187,8 @@ if __name__ == '__main__':
             with open(SETTINGS_FILE, 'w') as file_w:
                 for line in lines:
                     file_w.write(line)
-    MONITOR_WIDTH, MONITOR_HEIGHT = [int(elem) for elem in read_in_block(SETTINGS_FILE, 'MonitorResolution', ':', 'm_r')['m_r'][ 0].strip().split('x')]
+    MONITOR_WIDTH, MONITOR_HEIGHT = [int(elem) for elem in read_in_block(SETTINGS_FILE, 'MonitorResolution', ':', 'm_r')['m_r'][0].strip().split('x')]
+    APP_BAR_POSITION = read_in_block(SETTINGS_FILE, 'ApplicationBar', ':', 'position')['position'][0]
     print(f'MONITOR WIDTH: {MONITOR_WIDTH}, MONITOR_HEIGHT: {MONITOR_HEIGHT}')
     infos = read_in_block(SETTINGS_FILE, settings_block, ":", "username")
     usernames = infos['username']

@@ -33,37 +33,10 @@ from pynput.keyboard import Key, Controller as KeyboardController
 import subprocess
 import webbrowser
 from Naked.toolshed.shell import execute_js, muterun_js
-try:
-    from AppKit import NSScreen
-except:
-    pass
-
-try:
-    from win32api import GetSystemMetrics
-except:
-    pass
+from screeninfo import get_monitors
 
 mouse = MouseController()
 keyboard = KeyboardController()
-
-
-def get_screen_resolution_linux():
-    output = subprocess.Popen('xrandr | grep "\*" | cut -d" " -f4',shell=True, stdout=subprocess.PIPE).communicate()[0]
-    resolution = output.split()[0].split(b'x')
-    return int(resolution[0].decode("utf-8")), int(resolution[1].decode("utf-8"))
-
-
-def send(word):
-    if word == '<ENTER>':
-        keyboard.press(Key.enter)
-    else:
-        for letter in word:
-            if letter == ' ':
-                keyboard.press(Key.space)
-                keyboard.release(Key.space)
-            else:
-                keyboard.press(letter)
-                keyboard.release(letter)
 
 ## DOWNLOAD GEKODRIVER IF NOT INSTALLED
 system = platform.system()
@@ -71,8 +44,6 @@ print('SYSTEM: ', system.lower())
 CWD = os.getcwd()
 win_zip_directory = os.getcwd() + '/gekodriver.zip'
 win_unzip_directory = os.getcwd() + '/gekodriver'
-MONITOR_WIDTH = 0
-MONITOR_HEIGHT = 0
 
 # check the system name and downloads the correct gekodriver ( for now it works only for windows )
 if 'windows' in system.lower() :
@@ -88,20 +59,25 @@ if 'windows' in system.lower() :
         shutil.move(win_unzip_directory + '/geckodriver.exe', CWD + '/geckodriver.exe')
         shutil.rmtree(win_unzip_directory)
 
-    MONITOR_WIDTH, MONITOR_HEIGHT = GetSystemMetrics(0), GetSystemMetrics(1)
-
 elif 'darwin' in system.lower():
     if not os.path.exists('geckodriver'):
         pass
-    MONITOR_WIDTH, MONITOR_HEIGHT = NSScreen.mainScreen().frame().size.width, NSScreen.mainScreen().frame().size.height
 
 elif 'linux' in system.lower():
     if not os.path.exists('geckodriver'):
         pass
-    MONITOR_WIDTH, MONITOR_HEIGHT = get_screen_resolution_linux()
 
-print(f'MONITOR WIDTH: {MONITOR_WIDTH}, MONITOR_HEIGHT: {MONITOR_HEIGHT}')
-
+def send(word):
+    if word == '<ENTER>':
+        keyboard.press(Key.enter)
+    else:
+        for letter in word:
+            if letter == ' ':
+                keyboard.press(Key.space)
+                keyboard.release(Key.space)
+            else:
+                keyboard.press(letter)
+                keyboard.release(letter)
 '''
   ____   ____ _______    _____ _    _ _____ 
  |  _ \ / __ \__   __|  / ____| |  | |_   _|
@@ -278,12 +254,18 @@ class Window:
         style = ttk.Style()
         style.configure('my.TMenubutton', font=self.custom_font)
         # self.master.iconbitmap(default=cwd + "/assets/icona.ico")
-        ws = self.root.winfo_screenwidth()
-        hs = self.root.winfo_screenheight()
+        self.resolution = [int(elem) for elem in read_in_block(SETTINGS_FILE, 'MonitorResolution', ':', 'm_r')['m_r'][0].strip().split('x')]
         w = 730  # width for the Tk root
         h = 405  # height for the Tk root
-        x = (ws / 2) - (w / 2)
-        y = (hs / 2) - (h / 2)
+        if self.resolution == [0, 0]:
+            x = (self.root.winfo_screenwidth() / 2) - (w / 2)
+            y = (self.root.winfo_screenheight() / 2) - (h / 2)
+        else:
+            x = (MONITOR_WIDTH / 2) - (w / 2)
+            y = (MONITOR_HEIGHT / 2) - (h / 2)
+
+
+
         self.root.geometry('%dx%d+%d+%d' % (w, h, x, y))
         self.root.configure(bg="black")
 
@@ -354,6 +336,80 @@ class Window:
         self.root.update()
         stats_button = tk.Button(self.options_frame, text="stats", bg="white", font=self.custom_font, command=self.place_stats_frame)
         stats_button.place(y=profiles_button.winfo_height() + 90 + y, x=10)
+        self.root.update()
+        self.change_resolution_button = tk.Button(self.options_frame, text="Monitor Resolution", bg="white", font=self.custom_font, command=self.get_monitor_resolution)
+        self.change_resolution_button.place(y=stats_button.winfo_height() + 135 + y, x=10)
+        if self.resolution == [0, 0]:
+            self.change_resolution_button.config(bg='red', fg='white')
+
+    def get_monitor_resolution(self):
+        sizes = []
+        for monitor in get_monitors():
+            width, height = monitor.width, monitor.height
+            if not [width, height] in sizes:
+                sizes.append([width, height])
+
+
+        if len(sizes) > 1:
+            # Creating master Tkinter window
+            popup = tk.Toplevel(self.root)
+            popup.wm_title("Monitor resolution")
+            w = 350  # width for the Tk root
+            h = 270  # height for the Tk root
+            if self.resolution == [0, 0]:
+                x = (self.root.winfo_screenwidth() / 2) - (w / 2)
+                y = (self.root.winfo_screenheight() / 2) - (h / 2)
+            else:
+                x = (MONITOR_WIDTH / 2) - (w / 2)
+                y = (MONITOR_HEIGHT / 2) - (h / 2)
+
+            popup.geometry('%dx%d+%d+%d' % (w, h, x, y))
+            popup.resizable(False, False)
+
+            canvas = tk.Canvas(popup, width=250, height=250)
+            canvas.place(x=0, y=0)
+
+            label_1 = tk.Label(popup, text='There are more monitors.\n   Which one is the main monitor?  ')
+            canvas.create_window(175, 35, window=label_1)
+
+            monitors_frame = tk.Canvas(popup, width=210, height=100, bg='white')
+            canvas.create_window(175, 120, window=monitors_frame)
+
+            # Tkinter string variable
+            # able to store any string value
+            v = tk.StringVar()
+
+            values = dict()
+            for i in range(len(sizes)):
+                values[f'Monitor {i}'] = sizes[i]
+
+            # Loop is used to create multiple Radiobuttons
+            # rather than creating each button seperately
+            x = 15
+            y = 10
+            for (text, value) in values.items():
+                radio_button = tk.Radiobutton(monitors_frame, text=f'{text}: {value}', variable=v, value=value, bg='white', bd=0, highlightthickness=0)
+                monitors_frame.create_window(x, y, window=radio_button, anchor=tk.NW)
+                y+=30
+
+            scrollbar = tk.Scrollbar(monitors_frame, command=monitors_frame.yview)
+            scrollbar.place(x=0, y=0, relheight=1)
+            monitors_frame.configure(yscrollcommand=scrollbar.set, scrollregion=(0, 10, 0, y))
+
+            label_2 = tk.Label(popup, text="Remember to execute the app on the main monitor\nfor run correctly the bot", fg='red')
+            canvas.create_window(175, 210, window=label_2)
+            button = tk.Button(popup, text="Submit", command=lambda: self.submit_monitor_resolution(v.get().strip('[]').replace(' ', 'x'), popup))
+            canvas.create_window(175, 250, window=button)
+        else:
+            write_in_block(SETTINGS_FILE, "MonitorResolution", ":", m_r=str(sizes[0][0]) + 'x' + str(sizes[0][1]))
+        self.change_resolution_button.config(bg='white', fg='black')
+
+    def submit_monitor_resolution(self, resolution, popup):
+        write_in_block(SETTINGS_FILE, "MonitorResolution", ":", m_r=resolution)
+        MONITOR_WIDTH, MONITOR_HEIGHT = [int(elem) for elem in resolution.split('x')]
+        print(f'MONITOR WIDTH: {MONITOR_WIDTH}, MONITOR_HEIGHT: {MONITOR_HEIGHT}')
+        popup.destroy()
+
 
     def place_stable_frame(self):
         self.options_frame.place(x=5, y=5, anchor=tk.NW)
@@ -1126,10 +1182,10 @@ class InstagramBot:
         pages = pages.replace(' ', '').split(',')
         page = pages[randint(0, len(pages) - 1)]
         print(page)
-        # hashtag_followers = self.collect_followers_hashtags(page, 60)  # collect profiles from one of the pages that the user gave
+        hashtag_followers = self.collect_followers_hashtags(page, 60)  # collect profiles from one of the pages that the user gave
         print('ended')
-        hashtags = 0
-        followers = []
+        hashtags = hashtag_followers['hashtags']
+        followers = hashtag_followers['followers']
 
         # get all the usernames inside the to_visit file
         with open(self.TO_VISIT_FILE, 'a') as file:
@@ -2042,8 +2098,17 @@ if __name__ == '__main__':
 
     if not os.path.exists(SETTINGS_FILE):
         with open(SETTINGS_FILE, 'w') as file:
-            file.write("Last login\ndate:" + today_date + ":username:" + "None")
-
+            file.write("Last login\ndate:" + today_date + ":username:" + "None" + "\nMonitorResolution\nm_r:0x0")
+    else:
+        with open(SETTINGS_FILE, 'r') as file:
+            lines = file.readlines()
+            while '\n' in lines:
+                lines.remove('\n')
+            with open(SETTINGS_FILE, 'w') as file_w:
+                for line in lines:
+                    file_w.write(line)
+    MONITOR_WIDTH, MONITOR_HEIGHT = [int(elem) for elem in read_in_block(SETTINGS_FILE, 'MonitorResolution', ':', 'm_r')['m_r'][ 0].strip().split('x')]
+    print(f'MONITOR WIDTH: {MONITOR_WIDTH}, MONITOR_HEIGHT: {MONITOR_HEIGHT}')
     infos = read_in_block(SETTINGS_FILE, settings_block, ":", "username")
     usernames = infos['username']
 

@@ -1152,11 +1152,11 @@ class InstagramBot:
         self.STATS_FILE = CWD + "/Datas/Stats_" + username + ".txt"
         self.TO_VISIT_FILE = CWD + "/Datas/to_visit_" + username + ".txt"
 
-    def click(self, elem):
+    def click(self, elem, x=0, y=0):
         time.sleep(2)
-        x = elem.location['x']
-        y = elem.location['y']
-        mouse.position = (x + self.x_surplus + 10, y + self.y_surplus + 50)
+        x_ = elem.location['x']
+        y_ = elem.location['y']
+        mouse.position = (x_ + self.x_surplus + 10 + x, y_ + self.y_surplus + 10 + y)
         mouse.press(Button.left)
         mouse.release(Button.left)
         time.sleep(0.5)
@@ -1403,6 +1403,7 @@ class InstagramBot:
 
     def is_inexistent_profile(self, profile):
         try:
+            print('checking if inexistent')
             self.visit_user_page(profile)
             WebDriverWait(self.broswer, 1).until(lambda d: d.find_element_by_xpath(REMOVED_PAGE_XPATH).is_displayed())
             romed_page = self.broswer.find_element_by_xpath(REMOVED_PAGE_XPATH)
@@ -1413,6 +1414,7 @@ class InstagramBot:
     # check if a profile is private
     def is_private_profile(self, profile):
         try:
+            print('checking if is private')
             self.visit_user_page(profile)
             WebDriverWait(self.broswer, 1).until(lambda d: d.find_element_by_xpath(PRIVATE_PAGE_XPATH).is_displayed())
             romed_page = self.broswer.find_element_by_xpath(PRIVATE_PAGE_XPATH)
@@ -1423,6 +1425,7 @@ class InstagramBot:
     # check if a profile has no posts
     def is_no_post_profile(self, profile):
         try:
+            print('checking if is no post')
             self.visit_user_page(profile)
             WebDriverWait(self.broswer, 1).until(
                 lambda d: d.find_element_by_css_selector(PROFILE_NO_POSTS_SELECTOR).is_displayed())
@@ -1551,9 +1554,12 @@ class InstagramBot:
 
     # go to a profile url
     def visit_user_page(self, user, force=False):
-
-
-        if self.broswer.current_url != self._instagram_link + user + "/" or force:
+        user = user.strip()
+        print(self.broswer.current_url)
+        print(self._instagram_link + user + "/")
+        print(force)
+        if self.broswer.current_url not in [self._instagram_link + user + "/", self._instagram_link + user] or force:
+            print('visiting' + user)
             self.broswer.get(self._instagram_link + user)
             time.sleep(1)
             keyboard.press(Key.ctrl)
@@ -1607,7 +1613,7 @@ class InstagramBot:
                 lambda d: d.find_element_by_css_selector(CONFIRM_UNFOLLOW_CSS_SELECTOR).is_displayed())
             time.sleep(1)
             confirm_unfollow_button = self.broswer.find_element_by_css_selector(CONFIRM_UNFOLLOW_CSS_SELECTOR)
-            self.click(confirm_unfollow_button)
+            self.click(confirm_unfollow_button, y=40)
             # confirm_unfollow_button.click()
             # STATS EDITING
             write_in_block(self._stats_file, "Date:" + self._today_date, ":", unfollow="+=1")
@@ -1692,7 +1698,7 @@ class InstagramBot:
                 if put_like:
                     if button_to_like is not None:
                         try:
-                            self.click(button_to_like)
+                            self.click(button_to_like, y=40)
                             # button_to_like.click()
                             # STATS EDITING
                             write_in_block(self._stats_file, "Date:" + self._today_date, ":", likes="+=1")
@@ -1703,7 +1709,7 @@ class InstagramBot:
                         comment_button = self.find_comment_button()
                         if comment_button is not None and button_to_like is not None:
                             try:
-                                self.click(comment_button)
+                                self.click(comment_button, y=40)
                                 comment_button.click()
                             except WebDriverException as err:
                                 print(str(err))
@@ -1714,7 +1720,7 @@ class InstagramBot:
                             write_in_block(self._stats_file, "Date:" + self._today_date, ":", comments="+=1")
                 try:
                     next_post_ = self.next_post()
-                    self.click(next_post_)
+                    self.click(next_post_, y=40)
                     next_post_.click()
                 except NoSuchElementException:
                     return True
@@ -1728,9 +1734,7 @@ class InstagramBot:
         hashtags_followers = {'hashtags': [], 'followers': []}
         print('COLLECTING PROFILES')
         try:
-            print('aa')
             self.visit_user_page(profile)
-            print('ee')
             if self.is_private_profile(profile):
                 return hashtags_followers
             elif self.is_no_post_profile(profile):
@@ -1740,7 +1744,6 @@ class InstagramBot:
                 hashtags_followers['followers'] = followers
                 return hashtags_followers
             else:
-                print('here')
                 followers = self.collect_followers(profile, time_)
                 hashtags_followers['followers'] = followers
                 self.visit_user_page(profile)
@@ -1778,13 +1781,12 @@ class InstagramBot:
             if follow_private:
                 self.follow_profile(profile)
                 write_in_file(self.UNFOLLOW_LIST_FILE, profile)
-                remove_word_from_file(self.TO_VISIT_FILE, profile)
+
                 write_in_file(self.PROFILE_VISITED_FILE, profile)
                 print("private profile")
             else:
+                remove_word_from_file(self.TO_VISIT_FILE, profile)
                 return
-
-
         elif self.is_no_post_profile(profile):
             if follow_no_post:
                 self.follow_profile(profile)
@@ -1793,9 +1795,8 @@ class InstagramBot:
                 write_in_file(self.PROFILE_VISITED_FILE, profile)
                 print("no post profile")
             else:
+                remove_word_from_file(self.TO_VISIT_FILE, profile)
                 return
-
-
         elif self.is_inexistent_profile(profile):
             print("not existing page")
             remove_word_from_file(self.TO_VISIT_FILE, profile)
@@ -1818,7 +1819,7 @@ class InstagramBot:
             with open(self.UNFOLLOW_LIST_FILE, 'r') as file_read:
                 profiles = file_read.readlines()
             # SE CI SONO PIU' DI 100 PROFILE NELLA UNFOLLOW LIST INZIA A UNFOLLOWARE
-            if len(profiles) >= 0:
+            if len(profiles) >= 100:
                 check_internet_status()
                 print('COLLECTING PROFILE TO UNFOLLOW')
                 following_list = self.my_following_list(20)

@@ -2171,7 +2171,7 @@ class InstagramBot:
                 pass
 
 
-if __name__ == '__main__':Matteopablo99
+if __name__ == '__main__':
     today_date = str(time.localtime().tm_mday) + "/" + str(time.localtime().tm_mon) + "/" + str(
         time.localtime().tm_year)
     SETTINGS_FILE = CWD + "/Datas/Settings.txt"

@@ -1397,6 +1397,7 @@ class InstagramBot:
 
     # go to a profile url
     def visit_user_page(self, user, force=False):
+        user = user.strip()
         if self.broswer.current_url != self._instagram_link + user + "/" or force:
             self.broswer.get(self._instagram_link + user)
 
@@ -1605,7 +1606,10 @@ class InstagramBot:
                 write_in_file(self.UNFOLLOW_LIST_FILE, profile)
                 remove_word_from_file(self.TO_VISIT_FILE, profile)
                 write_in_file(self.PROFILE_VISITED_FILE, profile)
-            print("private profile")
+                print("private profile")
+            else:
+                return 
+            
 
         elif self.is_no_post_profile(profile):
             if follow_no_post:
@@ -1613,7 +1617,10 @@ class InstagramBot:
                 write_in_file(self.UNFOLLOW_LIST_FILE, profile)
                 remove_word_from_file(self.TO_VISIT_FILE, profile)
                 write_in_file(self.PROFILE_VISITED_FILE, profile)
-            print("no post profile")
+                print("no post profile")
+            else:
+                return 
+            
 
         elif self.is_inexistent_profile(profile):
             print("not existing page")

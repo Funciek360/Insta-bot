@@ -31,28 +31,37 @@ import platform
 
 ## DOWNLOAD GEKODRIVER IF NOT INSTALLED
 system = platform.system()
+print('SYSTEM: ', system.lower())
 CWD = os.getcwd()
 win_zip_directory = os.getcwd() + '/gekodriver.zip'
 win_unzip_directory = os.getcwd() + '/gekodriver'
 
+
+
 # check the system name and downloads the correct gekodriver ( for now it works only for windows )
-if 'windows' in system.lower() and not os.path.exists('geckodriver.exe'):
-    url = f'https://github.com/mozilla/geckodriver/releases/download/v0.24.0/geckodriver-v0.24.0-win64.zip'
-    urllib.request.urlretrieve(url, win_zip_directory)
+if 'windows' in system.lower() :
+    if not os.path.exists('geckodriver.exe'):
+        url = f'https://github.com/mozilla/geckodriver/releases/download/v0.24.0/geckodriver-v0.24.0-win64.zip'
+        urllib.request.urlretrieve(url, win_zip_directory)
 
-    with zipfile.ZipFile(win_zip_directory, 'r') as zip_ref:
-        zip_ref.extractall(win_unzip_directory)
-    zip_ref.close()
+        with zipfile.ZipFile(win_zip_directory, 'r') as zip_ref:
+            zip_ref.extractall(win_unzip_directory)
+        zip_ref.close()
 
-    os.remove(win_zip_directory)
-    shutil.move(win_unzip_directory + '/geckodriver.exe', CWD + '/geckodriver.exe')
-    shutil.rmtree(win_unzip_directory)
+        os.remove(win_zip_directory)
+        shutil.move(win_unzip_directory + '/geckodriver.exe', CWD + '/geckodriver.exe')
+        shutil.rmtree(win_unzip_directory)
+    EXE_PATH = f'{CWD}/geckodriver.exe'
 
-elif 'darwin' in system.lower() and not os.path.exists('geckodriver'):
-    pass
+elif 'darwin' in system.lower():
+    if not os.path.exists('geckodriver'):
+        pass
+    EXE_PATH = f'{CWD}/geckodriver'
 
-elif 'linux' in system.lower() and not os.path.exists('geckodriver'):
-    pass
+elif 'linux' in system.lower():
+    if not os.path.exists('geckodriver'):
+        pass
+    EXE_PATH = f'{CWD}/geckodriver'
 
 '''
   ____   ____ _______    _____ _    _ _____ 
@@ -67,6 +76,7 @@ elif 'linux' in system.lower() and not os.path.exists('geckodriver'):
 settings_block = 'Settings_'
 all_settings = 'username', 'password', 'pages', 'auto_comment', 'auto_like', \
                'auto_follow', 'auto_unfollow', 'run_in_background', 'delay_time'
+
 
 # check if all the data files of a user exists
 def check_files(profile):
@@ -110,10 +120,12 @@ def remove_files(profile):
         if os.path.exists(file):
             os.remove(file)
 
+
 # check if a word is in a file
 def word_in_file(file_path, word):
     with open(file_path, 'r') as file:
         return word in file.read()
+
 
 # read a data field in a file by a given datas separator and the block title
 # SETTINGS_MARCO -- > Block Title
@@ -149,6 +161,7 @@ def read_in_block(file_path, Block_title, datas_separator, *args):
                     returned_dict[data].append(datas_line[i + 1])
 
     return returned_dict
+
 
 # rewrite some datas inside a block by a given block title and datas separator
 def write_in_block(file_path, Block_title, datas_separator, **kwargs):
@@ -192,6 +205,7 @@ def write_in_block(file_path, Block_title, datas_separator, **kwargs):
         for line in text:
             file.write(line)
 
+
 # remove a data block by a given block title
 def remove_block(file_path, Block_title):
     with open(file_path, 'r') as file:
@@ -214,6 +228,7 @@ def remove_block(file_path, Block_title):
     with open(file_path, 'w') as file:
         for line in text:
             file.write(line)
+
 
 # BOT GUI
 class Window:
@@ -296,15 +311,18 @@ class Window:
             write_in_block(SETTINGS_FILE, "Last login", ":", username='None')
             self.current_username.set('None')
         self.last_username = self.current_username.get()
-        username_options = ttk.OptionMenu(self.options_frame, self.current_username, self.current_username.get(), style='my.TMenubutton')
+        username_options = ttk.OptionMenu(self.options_frame, self.current_username, self.current_username.get(),
+                                          style='my.TMenubutton')
         username_options.place(y=y + 30, x=10)
         self.username_options = username_options
         self.update_username_optionmenu()
         self.root.update()
-        profiles_button = tk.Button(self.options_frame, text="Profiles", bg="white", font=self.custom_font, command=self.place_profiles_frame)
+        profiles_button = tk.Button(self.options_frame, text="Profiles", bg="white", font=self.custom_font,
+                                    command=self.place_profiles_frame)
         profiles_button.place(y=y + 75, x=10)
         self.root.update()
-        stats_button = tk.Button(self.options_frame, text="stats", bg="white", font=self.custom_font, command=self.place_stats_frame)
+        stats_button = tk.Button(self.options_frame, text="stats", bg="white", font=self.custom_font,
+                                 command=self.place_stats_frame)
         stats_button.place(y=profiles_button.winfo_height() + 90 + y, x=10)
 
     def place_stable_frame(self):
@@ -315,7 +333,8 @@ class Window:
         today_date = str(time.localtime().tm_mday) + "/" + str(time.localtime().tm_mon) + "/" + \
                      str(time.localtime().tm_year)
         if self.current_username.get() != 'None':
-            infos = read_in_block(CWD + "/Datas/Stats_" + self.current_username.get() + ".txt", 'Date:' + today_date, ':',
+            infos = read_in_block(CWD + "/Datas/Stats_" + self.current_username.get() + ".txt", 'Date:' + today_date,
+                                  ':',
                                   'followers_number', 'interactions', 'unfollow', 'comments', 'likes', 'follow', )
 
             profile_visited_today = infos['interactions']
@@ -331,7 +350,8 @@ class Window:
             comments_left_today = 'None'
 
         # stats frame graphics
-        instagram_stats = tk.LabelFrame(self.stats_frame, text="Instagram Stats", bg="white", width=460, height=382, font=self.custom_font_10)
+        instagram_stats = tk.LabelFrame(self.stats_frame, text="Instagram Stats", bg="white", width=460, height=382,
+                                        font=self.custom_font_10)
         self.stats_frame.create_window(10, 10, window=instagram_stats, anchor=tk.NW)
         date_label = tk.Label(instagram_stats, text="Today Date: ", bg="white", font=self.custom_font)
         date_label.place(x=10, y=10)
@@ -341,18 +361,23 @@ class Window:
         profile_visited_label = tk.Label(instagram_stats, text="Profile visited: ", bg="white", font=self.custom_font)
         profile_visited_label.place(x=10, y=40)
         self.root.update()
-        profile_visited = tk.Label(instagram_stats, text=profile_visited_today, bg="white", fg="green", font=self.custom_font)
+        profile_visited = tk.Label(instagram_stats, text=profile_visited_today, bg="white", fg="green",
+                                   font=self.custom_font)
         profile_visited.place(x=profile_visited_label.winfo_x() + profile_visited_label.winfo_width() + 10, y=40)
         profile_followed_label = tk.Label(instagram_stats, text="Profile followed: ", bg="white", font=self.custom_font)
         profile_followed_label.place(x=10, y=70)
         self.root.update()
-        profile_followed = tk.Label(instagram_stats, text=profile_followed_today, bg="white", fg="green", font=self.custom_font)
+        profile_followed = tk.Label(instagram_stats, text=profile_followed_today, bg="white", fg="green",
+                                    font=self.custom_font)
         profile_followed.place(x=profile_followed_label.winfo_x() + profile_followed_label.winfo_width() + 10, y=70)
-        profile_unfollowed_label = tk.Label(instagram_stats, text="Profile unfollowed: ", bg="white", font=self.custom_font)
+        profile_unfollowed_label = tk.Label(instagram_stats, text="Profile unfollowed: ", bg="white",
+                                            font=self.custom_font)
         profile_unfollowed_label.place(x=10, y=100)
         self.root.update()
-        profile_unfollowed = tk.Label(instagram_stats, text=profile_unfollowed_today, bg="white", fg="green", font=self.custom_font)
-        profile_unfollowed.place(x=profile_unfollowed_label.winfo_x() + profile_unfollowed_label.winfo_width() + 10, y=100)
+        profile_unfollowed = tk.Label(instagram_stats, text=profile_unfollowed_today, bg="white", fg="green",
+                                      font=self.custom_font)
+        profile_unfollowed.place(x=profile_unfollowed_label.winfo_x() + profile_unfollowed_label.winfo_width() + 10,
+                                 y=100)
         likes_left_label = tk.Label(instagram_stats, text="Likes left: ", bg="white", font=self.custom_font)
         likes_left_label.place(x=10, y=130)
         self.root.update()
@@ -361,13 +386,17 @@ class Window:
         comments_left_label = tk.Label(instagram_stats, text="Comments left: ", bg="white", font=self.custom_font)
         comments_left_label.place(x=10, y=160)
         self.root.update()
-        comments_left = tk.Label(instagram_stats, text=comments_left_today, bg="white", fg="green", font=self.custom_font)
+        comments_left = tk.Label(instagram_stats, text=comments_left_today, bg="white", fg="green",
+                                 font=self.custom_font)
         comments_left.place(x=comments_left_label.winfo_x() + comments_left_label.winfo_width() + 10, y=160)
-        stats_list = tk.Button(instagram_stats, text="Stats History", state="disable", bg="white", font=self.custom_font, command=self.create_stats_list)
+        stats_list = tk.Button(instagram_stats, text="Stats History", state="disable", bg="white",
+                               font=self.custom_font, command=self.create_stats_list)
         stats_list.place(x=10, y=250)
-        followers_count_list = tk.Button(instagram_stats, text="Followers History",  state="disable", bg="white", font=self.custom_font, command=self.create_followers_list)
+        followers_count_list = tk.Button(instagram_stats, text="Followers History", state="disable", bg="white",
+                                         font=self.custom_font, command=self.create_followers_list)
         followers_count_list.place(x=10, y=300)
-        refresh_button = tk.Button(instagram_stats, text="Refresh", bg="white", font=self.custom_font, command=self.create_stats_frame)
+        refresh_button = tk.Button(instagram_stats, text="Refresh", bg="white", font=self.custom_font,
+                                   command=self.create_stats_frame)
         refresh_button.place(x=300, y=200)
         scrollbar = tk.Scrollbar(self.stats_frame, command=self.stats_frame.yview)
         self.stats_frame.configure(yscrollcommand=scrollbar.set, scrollregion=(0, 0, 0, 600))
@@ -386,7 +415,8 @@ class Window:
         pass
 
     def create_profiles_frame(self):
-        profiles_page = tk.LabelFrame(self.profiles_frame, text="Profiles", bg="white", width=460, height=382, font=self.custom_font_10)
+        profiles_page = tk.LabelFrame(self.profiles_frame, text="Profiles", bg="white", width=460, height=382,
+                                      font=self.custom_font_10)
         self.profiles_page = profiles_page
         self.profiles_frame.create_window(10, 10, window=profiles_page, anchor=tk.NW)
 
@@ -405,17 +435,22 @@ class Window:
                 label_text = username[:10] + '..'
             username_label = tk.Label(profiles_page, text=label_text, font=self.custom_font)
             username_label.place(x=x, y=y)
-            edit_username = tk.Button(profiles_page, text='Edit', font=self.custom_font_10, command=lambda username_=username: self.edit_profile(username_))
+            edit_username = tk.Button(profiles_page, text='Edit', font=self.custom_font_10,
+                                      command=lambda username_=username: self.edit_profile(username_))
             edit_username.place(x=x + 130, y=y - 5)
-            remove_username = tk.Button(profiles_page, text='Remove', font=self.custom_font_10, command=lambda username_=username: self.remove_profile(username_))
+            remove_username = tk.Button(profiles_page, text='Remove', font=self.custom_font_10,
+                                        command=lambda username_=username: self.remove_profile(username_))
             remove_username.place(x=x + 200, y=y - 5)
-            run_bot = tk.Button(profiles_page, text='Run', font=self.custom_font_10, command=lambda username_=username, pswd=password: self.run_bot(username_, pswd))
+            run_bot = tk.Button(profiles_page, text='Run', font=self.custom_font_10,
+                                command=lambda username_=username, pswd=password: self.run_bot(username_, pswd))
             run_bot.place(x=x + 300, y=y - 5)
-            stop_bot = tk.Button(profiles_page, text='Stop', font=self.custom_font_10, command=lambda username_=username: self.stop_bot(username_))
+            stop_bot = tk.Button(profiles_page, text='Stop', font=self.custom_font_10,
+                                 command=lambda username_=username: self.stop_bot(username_))
             stop_bot.place(x=x + 370, y=y - 5)
             y += 50
 
-        add_profile = tk.Button(profiles_page, text='Add profile', font=self.custom_font, command=self.place_and_clear_new_profile_frame)
+        add_profile = tk.Button(profiles_page, text='Add profile', font=self.custom_font,
+                                command=self.place_and_clear_new_profile_frame)
         add_profile.place(x=x, y=y)
         scrollbar = tk.Scrollbar(self.profiles_frame, command=self.profiles_frame.yview)
         scrollbar.place(relx=1, rely=0, relheight=1, anchor=tk.NE)
@@ -445,7 +480,8 @@ class Window:
     # remove all the files of a user and remove the user from the settings file
     def remove_profile(self, profile):
         if messagebox.askyesno('Attenction',
-                               'Are you sure to delete this profile? ({0}).\nThis will cause the loss of all the relative stats and dsatas'.format(profile)):
+                               'Are you sure to delete this profile? ({0}).\nThis will cause the loss of all the relative stats and dsatas'.format(
+                                   profile)):
             remove_block(SETTINGS_FILE, 'Settings_' + profile)
             remove_files(profile)
             self.update_username_optionmenu()
@@ -495,7 +531,6 @@ class Window:
         self.auto_unfollow.set(int(infos['auto_unfollow'][0]))
         self.run_in_background.set(int(infos['run_in_background'][0]))
 
-
         self.pages_list.delete(1.0, tk.END)
         self.pages_list.insert(tk.INSERT, '- ' + self.instagram_pages.get().replace(' ', '').replace(',', '\n- '))
         self.pages_list.config(state='disabled')
@@ -513,48 +548,64 @@ class Window:
     # create the page where the user can save and edit his preferences
     def create_new_profile_frame(self):
 
-        instagram_datas = tk.LabelFrame(self.new_profile_frame, text="Instagram Datas", bg="white", width=460, height=505, font=self.custom_font_10)
+        instagram_datas = tk.LabelFrame(self.new_profile_frame, text="Instagram Datas", bg="white", width=460,
+                                        height=505, font=self.custom_font_10)
         self.instagram_datas = instagram_datas
         self.new_profile_frame.create_window(10, 10, window=instagram_datas, anchor=tk.NW)
-        instagram_login_name_label = tk.Label(instagram_datas, text="Ig. Login username : ", font=self.custom_font, bg="white")
+        instagram_login_name_label = tk.Label(instagram_datas, text="Ig. Login username : ", font=self.custom_font,
+                                              bg="white")
         instagram_login_name_label.place(x=10, y=0)
-        instagram_login_password_label = tk.Label(instagram_datas, text="Ig. Login password : ", bg="white", font=self.custom_font)
+        instagram_login_password_label = tk.Label(instagram_datas, text="Ig. Login password : ", bg="white",
+                                                  font=self.custom_font)
         instagram_login_password_label.place(x=10, y=40)
         instagram_pages = tk.Label(instagram_datas, text="Pages to interact with : ", bg="white", font=self.custom_font)
         instagram_pages.place(x=10, y=75)
         self.root.update()
-        instagram_login_name_entry = tk.Entry(instagram_datas, textvariable=self.login_username, bg="white", font=self.custom_font)
+        instagram_login_name_entry = tk.Entry(instagram_datas, textvariable=self.login_username, bg="white",
+                                              font=self.custom_font)
         instagram_login_name_entry.place(x=instagram_login_name_label.winfo_width() + 40, y=5)
-        instagram_login_password_entry = tk.Entry(instagram_datas, textvariable=self.login_password, bg="white", show="*", font=self.custom_font, highlightbackground="red",
+        instagram_login_password_entry = tk.Entry(instagram_datas, textvariable=self.login_password, bg="white",
+                                                  show="*", font=self.custom_font, highlightbackground="red",
                                                   highlightthickness=0, )
         instagram_login_password_entry.place(x=instagram_login_password_label.winfo_width() + 40, y=40)
-        search_page = tk.Entry(instagram_datas, bg="white", textvariable=self.instagram_page, font=self.custom_font, width=15)
+        search_page = tk.Entry(instagram_datas, bg="white", textvariable=self.instagram_page, font=self.custom_font,
+                               width=15)
         search_page.place(x=250, y=110)
         search_page.bind("<KeyRelease>", lambda event: self.search_page())
-        add_page_button = tk.Button(self.instagram_datas, text="Add", bg="white", font=self.custom_font_10, command=self.add_page)
+        add_page_button = tk.Button(self.instagram_datas, text="Add", bg="white", font=self.custom_font_10,
+                                    command=self.add_page)
         add_page_button.place(x=250, y=140)
-        remove_page_button = tk.Button(self.instagram_datas, text="Remove", bg="white", font=self.custom_font_10, command=self.remove_page)
+        remove_page_button = tk.Button(self.instagram_datas, text="Remove", bg="white", font=self.custom_font_10,
+                                       command=self.remove_page)
         remove_page_button.place(x=320, y=140)
         self.pages_list = ScrolledText(instagram_datas, bg="white", font=self.custom_font, width=20, height=6)
         self.pages_list.place(x=10, y=110)
-        instagram_interactions = tk.LabelFrame(instagram_datas, text="Bot Ig. interactions", bg="white", font=self.custom_font_10)
+        instagram_interactions = tk.LabelFrame(instagram_datas, text="Bot Ig. interactions", bg="white",
+                                               font=self.custom_font_10)
         self.instagram_interactions = instagram_interactions
         instagram_interactions.place(x=10, y=250)
-        put_like = tk.Checkbutton(instagram_interactions, text="Auto like", bg="white", variable=self.auto_like, font=self.custom_font)
+        put_like = tk.Checkbutton(instagram_interactions, text="Auto like", bg="white", variable=self.auto_like,
+                                  font=self.custom_font)
         put_like.place(x=0, y=0)
         self.root.update()
-        put_comment = tk.Checkbutton(instagram_interactions, text="Auto comment", bg="white", variable=self.auto_comment, font=self.custom_font, command=self.display_comment_button)
+        put_comment = tk.Checkbutton(instagram_interactions, text="Auto comment", bg="white",
+                                     variable=self.auto_comment, font=self.custom_font,
+                                     command=self.display_comment_button)
         put_comment.place(x=put_like.winfo_width() + 10, y=0)
         self.put_comment_checkbox = put_comment
-        self.write_comment_button = tk.Button(self.instagram_datas, text="Write comment", bg="white", font=self.custom_font_10, command=self.place_comment_frame)
+        self.write_comment_button = tk.Button(self.instagram_datas, text="Write comment", bg="white",
+                                              font=self.custom_font_10, command=self.place_comment_frame)
         self.root.update()
-        put_follow = tk.Checkbutton(instagram_interactions, text="Auto follow", bg="white", variable=self.auto_follow, font=self.custom_font, command=self.follow_option)
+        put_follow = tk.Checkbutton(instagram_interactions, text="Auto follow", bg="white", variable=self.auto_follow,
+                                    font=self.custom_font, command=self.follow_option)
         put_follow.place(x=0, y=put_like.winfo_height())
         self.root.update()
-        put_unfollow = tk.Checkbutton(instagram_interactions, text="Auto unfollow", bg="white", variable=self.auto_unfollow, font=self.custom_font)
+        put_unfollow = tk.Checkbutton(instagram_interactions, text="Auto unfollow", bg="white",
+                                      variable=self.auto_unfollow, font=self.custom_font)
         put_unfollow.place(x=put_follow.winfo_width() + 10, y=put_like.winfo_height())
         self.root.update()
-        instagram_interactions.configure(width=put_unfollow.winfo_x() + put_unfollow.winfo_width() + 10, height=put_unfollow.winfo_y() + put_unfollow.winfo_height() + 5)
+        instagram_interactions.configure(width=put_unfollow.winfo_x() + put_unfollow.winfo_width() + 10,
+                                         height=put_unfollow.winfo_y() + put_unfollow.winfo_height() + 5)
         self.root.update()
         delay_time_1 = tk.Label(instagram_datas, text="Delay time(seconds) between ", bg="white", font=self.custom_font)
         delay_time_1.place(x=10, y=instagram_interactions.winfo_y() + instagram_interactions.winfo_height() + 5)
@@ -562,15 +613,19 @@ class Window:
         delay_time_2 = tk.Label(instagram_datas, text="two interaction cycles : ", bg="white", font=self.custom_font)
         delay_time_2.place(x=10, y=delay_time_1.winfo_y() + 5)
         self.root.update()
-        delay_time_entry = tk.Entry(instagram_datas, textvariable=self.delay_time, bg="white", font=self.custom_font, width=5)
-        delay_time_entry.place(x=delay_time_2.winfo_width() + 100, y=instagram_interactions.winfo_y() + instagram_interactions.winfo_height() + 15)
+        delay_time_entry = tk.Entry(instagram_datas, textvariable=self.delay_time, bg="white", font=self.custom_font,
+                                    width=5)
+        delay_time_entry.place(x=delay_time_2.winfo_width() + 100,
+                               y=instagram_interactions.winfo_y() + instagram_interactions.winfo_height() + 15)
         bot_options = tk.LabelFrame(instagram_datas, text="Bot options", bg="white", font=self.custom_font_10)
         bot_options.place(x=10, y=delay_time_1.winfo_y() + 50)
         self.root.update()
-        Run_in_background = tk.Checkbutton(bot_options, text="Run in background", bg="white", variable=self.run_in_background, font=self.custom_font)
+        Run_in_background = tk.Checkbutton(bot_options, text="Run in background", bg="white",
+                                           variable=self.run_in_background, font=self.custom_font)
         Run_in_background.place(x=0, y=0)
         self.root.update()
-        bot_options.configure(width=Run_in_background.winfo_x() + Run_in_background.winfo_width() + 5, height=Run_in_background.winfo_y() + Run_in_background.winfo_height() + 5)
+        bot_options.configure(width=Run_in_background.winfo_x() + Run_in_background.winfo_width() + 5,
+                              height=Run_in_background.winfo_y() + Run_in_background.winfo_height() + 5)
         self.root.update()
         scrollbar = tk.Scrollbar(self.new_profile_frame, command=self.new_profile_frame.yview)
         self.new_profile_frame.configure(yscrollcommand=scrollbar.set, scrollregion=(0, 0, 0, 520))
@@ -681,7 +736,8 @@ class Window:
 
     def create_comment_frame(self):
         # comment page graphics
-        comment_page = tk.LabelFrame(self.comment_frame, text="Ig. comment", bg="white", width=460, height=382, font=self.custom_font_10)
+        comment_page = tk.LabelFrame(self.comment_frame, text="Ig. comment", bg="white", width=460, height=382,
+                                     font=self.custom_font_10)
         self.comment_page = comment_page
         self.comment_frame.create_window(10, 10, window=comment_page, anchor=tk.NW)
         self.emoji_frame = tk.Canvas(comment_page, width=443, height=160, bg="white")
@@ -692,10 +748,13 @@ class Window:
         self.comment_text = ScrolledText(comment_page, bg="white", font=self.custom_font, width=46, height=3)
         self.comment_text.place(x=10, y=50)
         self.root.update()
-        sumbit_comment = tk.Button(comment_page, text="Sumbit comment", command=self.sumbit_comment, font=self.custom_font_10)
+        sumbit_comment = tk.Button(comment_page, text="Sumbit comment", command=self.sumbit_comment,
+                                   font=self.custom_font_10)
         self.root.update()
-        sumbit_comment.place(x=435 - sumbit_comment.winfo_reqwidth(), y=self.comment_text.winfo_height() + 60, anchor=tk.NW)
-        search_emoji_label = tk.Label(comment_page, text="Search emoji(emoji name): ", font=self.custom_font, bg="white")
+        sumbit_comment.place(x=435 - sumbit_comment.winfo_reqwidth(), y=self.comment_text.winfo_height() + 60,
+                             anchor=tk.NW)
+        search_emoji_label = tk.Label(comment_page, text="Search emoji(emoji name): ", font=self.custom_font,
+                                      bg="white")
         search_emoji_label.place(x=10, y=self.comment_text.winfo_height() + 55)
         self.root.update()
         self.search_emoji = tk.Text(comment_page, bg="white", font=self.custom_font, width=10, height=1)
@@ -943,6 +1002,7 @@ PROFILE_NO_POSTS_SELECTOR = '.FuWoR.-wdIA.A2kdl'
 TABLE_CSS_SELECTOR = ".isgrP"
 TABELLA_PER_VEDERE_ALTEZZA_ELEMETNO_CSS_SELECTOR = ".PZuss"
 
+
 # check if internet is working
 def internet_on():
     try:
@@ -952,11 +1012,13 @@ def internet_on():
         print(err)
         return False
 
+
 # check if internet is working
 def check_internet_status():
     while not internet_on():
         print("NO INTERNET")
         time.sleep(5)
+
 
 # remove a word from a file
 def remove_word_from_file(file_path, word):
@@ -1000,6 +1062,7 @@ def take_first_in_list(file_path, line=0):
 
         return current_line, line
 
+
 # WEB INSTAGRAM BOT
 class InstagramBot:
     def __init__(self, username, password, headless=False):
@@ -1010,7 +1073,12 @@ class InstagramBot:
         if headless:
             options_.add_argument('--headless')
             options_.add_argument('--disable-gpu')
-        self.broswer = webdriver.Firefox(options=options_)
+
+        user_agent = "Mozilla/5.0 (iPhone; U; CPU iPhone OS 3_0 like Mac OS X; en-us) AppleWebKit/528.18 (KHTML, like Gecko) Version/4.0 Mobile/7A341 Safari/528.16"
+        profile = webdriver.FirefoxProfile()
+        profile.set_preference("general.useragent.override", user_agent)
+
+        self.broswer = webdriver.Firefox(options=options_, executable_path='/home/pero/PycharmProjects/instagram/python/geckodriver', firefox_profile=profile)
         self.broswer.maximize_window()
         self.broswer.set_page_load_timeout(30)
         self._username = username
@@ -1031,7 +1099,8 @@ class InstagramBot:
     def setup(self):
         self.login()  # opend instagram and do the login
         self.remove_initial_popup()  # remove ig intial popup windows
-        self._session_start_following_count = self.user_following_num(self._username)  # check how many users u are following at the start
+        self._session_start_following_count = self.user_following_num(
+            self._username)  # check how many users u are following at the start
 
     def stop(self):
         self.broswer.quit()  # quit the bot
@@ -1046,10 +1115,13 @@ class InstagramBot:
         pages = pages.replace(' ', '').split(',')
         page = pages[randint(0, len(pages) - 1)]
 
-        hashtag_followers = self.collect_followers_hashtags(page, 60)  # collect profiles from one of the pages that the user gave
+        # hashtag_followers = self.collect_followers_hashtags(page, 60)  # collect profiles from one of the pages that the user gave
 
-        hashtags = hashtag_followers['hashtags']
-        followers = hashtag_followers['followers']
+        # hashtags = hashtag_followers['hashtags']
+        # followers = hashtag_followers['followers']
+
+        hashtags = []
+        followers = []
 
         # get all the usernames inside the to_visit file
         with open(self.TO_VISIT_FILE, 'a') as file:
@@ -1082,13 +1154,14 @@ class InstagramBot:
         # for each profile in the to_visit file the bot visit him and left some interactions
         for i, profile in enumerate(usernames):
             print('USER NUMBER: ', i)
-            self.complete_bot(profile, posts_num=3, left_how_many_comments=1,
+            self.complete_bot(profile, posts_num=1, left_how_many_comments=1,
                               put_like=bool_dict[int(infos['auto_like'][0])],
                               put_comment=bool_dict[int(infos['auto_comment'][0])], comment=comment,
                               unfollow=bool_dict[int(infos['auto_unfollow'][0])],
                               follow=bool_dict[int(infos['auto_follow'][0])],
-                              follow_private=bool_dict[int(infos['auto_follow'][0])],
-                              follow_no_post=bool_dict[int(infos['auto_follow'][0])], total_time=int(infos['delay_time'][0]))
+                              follow_private=False,
+                              follow_no_post=False,
+                              total_time=int(infos['delay_time'][0]))
 
         self.run()
 
@@ -1507,6 +1580,7 @@ class InstagramBot:
     def next_post(self):
         next_post_ = self.broswer.find_element_by_css_selector(NEXT_POST_CSS_SELECTOR)
         return next_post_
+
     # interact with a profile by putting likes/comments on posts
     def interact_with_profile(self, profile, posts_num=1, put_comment=False, put_like=False, left_how_many_comments=0,
                               comment=""):
@@ -1601,30 +1675,30 @@ class InstagramBot:
         print("\n" + profile)
 
         if self.is_private_profile(profile):
+            print("private profile")
+            remove_word_from_file(self.TO_VISIT_FILE, profile)
             if follow_private:
                 self.follow_profile(profile)
                 write_in_file(self.UNFOLLOW_LIST_FILE, profile)
                 remove_word_from_file(self.TO_VISIT_FILE, profile)
                 write_in_file(self.PROFILE_VISITED_FILE, profile)
-                print("private profile")
             else:
-                return 
-            
+                return
 
         elif self.is_no_post_profile(profile):
+            print("no post profile")
+            remove_word_from_file(self.TO_VISIT_FILE, profile)
             if follow_no_post:
                 self.follow_profile(profile)
                 write_in_file(self.UNFOLLOW_LIST_FILE, profile)
-                remove_word_from_file(self.TO_VISIT_FILE, profile)
                 write_in_file(self.PROFILE_VISITED_FILE, profile)
-                print("no post profile")
             else:
-                return 
-            
+                return
 
         elif self.is_inexistent_profile(profile):
             print("not existing page")
             remove_word_from_file(self.TO_VISIT_FILE, profile)
+            return
 
         elif follow:
             print("interactions")
@@ -1674,6 +1748,8 @@ class InstagramBot:
         if total_time <= time_end:
             pass
         elif time_end < total_time:
+            self.broswer.get('https://www.youtube.com')
+            self.broswer.find_element_by_css_selector('.large-media-item-thumbnail-container').click()
             time.sleep(total_time - time_end)
 
         print("time: ", time.time() - t1)
